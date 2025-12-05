@@ -22,6 +22,8 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
     private val sessionManager = SessionManager(getApplication())
 
     private val _movieState = MutableStateFlow<MovieState>(MovieState.Loading)
+    val movieState: StateFlow<MovieState> = _movieState.asStateFlow() // Exposing the state publicly
+
     private val _searchQuery = MutableStateFlow("")
     val searchQuery: StateFlow<String> = _searchQuery.asStateFlow()
 

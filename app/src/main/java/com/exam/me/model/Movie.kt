@@ -2,15 +2,16 @@ package com.exam.me.model
 
 import com.google.gson.annotations.SerializedName
 
+// This data class now matches the 'Pelicula' entity from the backend.
 data class Movie(
     @SerializedName("_id")
     val id: String,
-    val title: String,
+    val titulo: String,
     val director: String,
-    val genre: String,
-    val duration: Int,
-    val synopsis: String,
-    val releaseDate: String,
-    val posterUrl: String,
-    val trailerUrl: String
+    val anio: Int,
+    val duracion: Int,
+    val genero: String,
+    // The backend guide shows 'imagen' and 'imagenThumbnail' can be null
+    val imagen: String?,
+    val imagenThumbnail: String?
 )

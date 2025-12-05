@@ -1,37 +1,96 @@
 package com.exam.me.ui.auth
 
-import androidx.lifecycle.ViewModel
+import android.app.Application
+import android.util.Patterns
+import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import com.exam.me.data.local.SessionManager
 import com.exam.me.model.AuthResponse
 import com.exam.me.model.RegisterRequest
 import com.exam.me.repository.AuthRepository
 import com.exam.me.network.RetrofitInstance
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
-sealed class RegisterState {
-    object Idle : RegisterState()
-    object Loading : RegisterState()
-    data class Success(val authResponse: AuthResponse) : RegisterState()
-    data class Error(val message: String) : RegisterState()
+sealed class RegisterResult {
+    object Idle : RegisterResult()
+    object Loading : RegisterResult()
+    data class Success(val authResponse: AuthResponse) : RegisterResult()
+    data class Error(val message: String) : RegisterResult()
 }
 
-class RegisterViewModel : ViewModel() {
+// Simplified form state - only name, email, password
+data class RegisterFormState(
+    val nombre: String = "",
+    val email: String = "",
+    val password: String = "",
+    val nombreError: String? = null,
+    val emailError: String? = null,
+    val passwordError: String? = null,
+    val isFormValid: Boolean = false
+)
 
-    private val authRepository = AuthRepository(RetrofitInstance.api)
+class RegisterViewModel(application: Application) : AndroidViewModel(application) {
 
-    private val _registerState = MutableStateFlow<RegisterState>(RegisterState.Idle)
-    val registerState: StateFlow<RegisterState> = _registerState
+    private val sessionManager = SessionManager(getApplication())
+    private val authRepository = AuthRepository(RetrofitInstance.api, sessionManager)
 
-    fun register(name: String, email: String, password: String) {
+    private val _formState = MutableStateFlow(RegisterFormState())
+    val formState: StateFlow<RegisterFormState> = _formState.asStateFlow()
+
+    private val _registerResult = MutableStateFlow<RegisterResult>(RegisterResult.Idle)
+    val registerResult: StateFlow<RegisterResult> = _registerResult.asStateFlow()
+
+    fun onNameChange(name: String) {
+        _formState.update { it.copy(nombre = name) }
+        validateForm()
+    }
+
+    fun onEmailChange(email: String) {
+        _formState.update { it.copy(email = email) }
+        validateForm()
+    }
+
+    fun onPasswordChange(password: String) {
+        _formState.update { it.copy(password = password) }
+        validateForm()
+    }
+
+    private fun validateForm() {
+        val state = _formState.value
+        val nameError = if (state.nombre.isBlank()) "Nombre is required" else null
+        val emailError = if (!Patterns.EMAIL_ADDRESS.matcher(state.email).matches()) "Invalid email" else null
+        val passwordError = if (state.password.length < 6) "Password must be at least 6 characters" else null
+
+        _formState.update { it.copy(
+            nombreError = nameError,
+            emailError = emailError,
+            passwordError = passwordError,
+            isFormValid = nameError == null && emailError == null && passwordError == null
+        ) }
+    }
+
+    fun register() {
+        validateForm()
+        if (!_formState.value.isFormValid) return
+
         viewModelScope.launch {
-            _registerState.value = RegisterState.Loading
+            _registerResult.value = RegisterResult.Loading
             try {
-                val authResponse = authRepository.register(RegisterRequest(name, email, password))
-                _registerState.value = RegisterState.Success(authResponse)
+                val state = _formState.value
+                val request = RegisterRequest(
+                    nombre = state.nombre,
+                    email = state.email,
+                    password = state.password
+                )
+                val authResponse = authRepository.register(request)
+                sessionManager.saveSession(authResponse.accessToken, authResponse.user.role)
+                _registerResult.value = RegisterResult.Success(authResponse)
             } catch (e: Exception) {
-                _registerState.value = RegisterState.Error(e.message ?: "An unexpected error occurred")
+                _registerResult.value = RegisterResult.Error(e.message ?: "An unexpected error occurred")
             }
         }
     }

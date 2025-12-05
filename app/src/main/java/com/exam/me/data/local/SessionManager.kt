@@ -15,6 +15,7 @@ class SessionManager(private val context: Context) {
 
     private object PreferencesKeys {
         val AUTH_TOKEN = stringPreferencesKey("auth_token")
+        val USER_ROLE = stringPreferencesKey("user_role")
     }
 
     val authToken: Flow<String?> = context.dataStore.data
@@ -22,15 +23,21 @@ class SessionManager(private val context: Context) {
             preferences[PreferencesKeys.AUTH_TOKEN]
         }
 
-    suspend fun saveAuthToken(token: String) {
+    val userRole: Flow<String?> = context.dataStore.data
+        .map { preferences ->
+            preferences[PreferencesKeys.USER_ROLE]
+        }
+
+    suspend fun saveSession(token: String, role: String) {
         context.dataStore.edit {
             it[PreferencesKeys.AUTH_TOKEN] = token
+            it[PreferencesKeys.USER_ROLE] = role
         }
     }
 
-    suspend fun clearAuthToken() {
+    suspend fun clearSession() {
         context.dataStore.edit {
-            it.remove(PreferencesKeys.AUTH_TOKEN)
+            it.clear()
         }
     }
 }

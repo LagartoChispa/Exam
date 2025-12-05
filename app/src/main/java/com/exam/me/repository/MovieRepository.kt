@@ -14,4 +14,12 @@ class MovieRepository(private val apiService: ApiService, private val sessionMan
         }
         return apiService.getMovies("Bearer $token")
     }
+
+    suspend fun getMovieById(movieId: String): Movie {
+        val token = sessionManager.authToken.first()
+        if (token.isNullOrEmpty()) {
+            throw Exception("User not authenticated")
+        }
+        return apiService.getMovieById("Bearer $token", movieId)
+    }
 }
