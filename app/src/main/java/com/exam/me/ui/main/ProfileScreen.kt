@@ -26,15 +26,23 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.SubcomposeAsyncImage
 import com.exam.me.model.UserProfile
 
+/**
+ * Pantalla de perfil de usuario. Muestra la información del usuario y permite la edición.
+ *
+ * @param viewModel El [ProfileViewModel] que gestiona el estado y la lógica de esta pantalla.
+ * @param onNavigateBack Devolución de llamada para navegar a la pantalla anterior.
+ */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ProfileScreen(
     viewModel: ProfileViewModel = viewModel(),
     onNavigateBack: () -> Unit
 ) {
+    // Recopila los diversos estados del ViewModel.
     val profileState by viewModel.profileState.collectAsState()
     val formState by viewModel.formState.collectAsState()
 
+    // Lanzador para obtener una imagen de la cámara.
     val cameraLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.TakePicturePreview(),
         onResult = { bitmap ->
@@ -44,6 +52,7 @@ fun ProfileScreen(
         }
     )
 
+    // Lanzador para solicitar el permiso de la cámara.
     val permissionLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.RequestPermission(),
         onResult = { isGranted ->
@@ -56,10 +65,10 @@ fun ProfileScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("My Profile") },
+                title = { Text("Mi Perfil") },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Atrás")
                     }
                 }
             )
@@ -71,16 +80,20 @@ fun ProfileScreen(
                 .padding(paddingValues),
             contentAlignment = Alignment.Center
         ) {
+            // Muestra el contenido en función del estado del perfil.
             when (val state = profileState) {
                 is ProfileState.Loading -> {
+                    // Muestra un indicador de carga mientras se carga el perfil.
                     CircularProgressIndicator()
                 }
                 is ProfileState.Success -> {
+                    // Muestra el contenido del perfil cuando la carga es exitosa.
                     ProfileContent(state.profile, formState, viewModel, onImageChangeClick = {
                         permissionLauncher.launch(Manifest.permission.CAMERA)
                     })
                 }
                 is ProfileState.Error -> {
+                    // Muestra un mensaje de error si la carga del perfil falla.
                     Text(state.message, color = MaterialTheme.colorScheme.error)
                 }
             }
@@ -88,6 +101,14 @@ fun ProfileScreen(
     }
 }
 
+/**
+ * El contenido principal de la pantalla de perfil.
+ *
+ * @param profile El perfil de usuario a mostrar.
+ * @param formState El estado del formulario de edición.
+ * @param viewModel El [ProfileViewModel] para gestionar las acciones del usuario.
+ * @param onImageChangeClick Devolución de llamada para cuando se solicita un cambio de imagen.
+ */
 @Composable
 fun ProfileContent(
     profile: UserProfile,
@@ -102,10 +123,11 @@ fun ProfileContent(
             .verticalScroll(rememberScrollState()),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
+        // Contenedor para la imagen de perfil y el botón de cambio de imagen.
         Box(contentAlignment = Alignment.BottomEnd) {
             SubcomposeAsyncImage(
                 model = profile.profileImageUrl,
-                contentDescription = "Profile Picture",
+                contentDescription = "Foto de perfil",
                 modifier = Modifier
                     .size(120.dp)
                     .clip(CircleShape)
@@ -115,19 +137,20 @@ fun ProfileContent(
                     CircularProgressIndicator()
                 },
                 error = {
-                    Image(imageVector = Icons.Default.Person, contentDescription = "Default Profile Picture")
+                    Image(imageVector = Icons.Default.Person, contentDescription = "Foto de perfil por defecto")
                 }
             )
             IconButton(onClick = onImageChangeClick, modifier = Modifier.offset(x = 10.dp, y = 10.dp)) {
-                Icon(Icons.Filled.AddAPhoto, "Change Picture", tint = MaterialTheme.colorScheme.primary)
+                Icon(Icons.Filled.AddAPhoto, "Cambiar foto", tint = MaterialTheme.colorScheme.primary)
             }
         }
         Spacer(modifier = Modifier.height(32.dp))
 
+        // Campo de texto para el nombre del usuario.
         OutlinedTextField(
             value = formState.nombre,
             onValueChange = { viewModel.onNameChange(it) },
-            label = { Text("Name") },
+            label = { Text("Nombre") },
             modifier = Modifier.fillMaxWidth(),
             isError = formState.nombreError != null,
             trailingIcon = { if (formState.nombreError != null) Icon(Icons.Filled.Error, "error", tint = MaterialTheme.colorScheme.error) },
@@ -135,20 +158,22 @@ fun ProfileContent(
         )
         Spacer(modifier = Modifier.height(16.dp))
 
+        // Campo de texto para el email del usuario (solo lectura).
         OutlinedTextField(
             value = formState.email,
-            onValueChange = { /* Email is not editable */ },
+            onValueChange = { /* El email no es editable */ },
             label = { Text("Email") },
             modifier = Modifier.fillMaxWidth(),
-            enabled = false // Email is read-only
+            enabled = false // El email es de solo lectura
         )
         Spacer(modifier = Modifier.height(32.dp))
 
+        // Botón para guardar los cambios en el perfil.
         Button(
             onClick = { viewModel.updateProfile() },
             modifier = Modifier.fillMaxWidth()
         ) {
-            Text("Save Changes")
+            Text("Guardar cambios")
         }
     }
 }

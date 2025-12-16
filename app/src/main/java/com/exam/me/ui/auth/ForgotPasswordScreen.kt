@@ -13,6 +13,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 
+/**
+ * Una pantalla Composable para el proceso de olvido de contraseña.
+ *
+ * @param viewModel El [ForgotPasswordViewModel] que gestiona el estado y la lógica de esta pantalla.
+ * @param onNavigateBack Una función de devolución de llamada para navegar a la pantalla anterior.
+ * @param onPasswordResetSent Una función de devolución de llamada que se invoca cuando el enlace de restablecimiento de contraseña se ha enviado correctamente.
+ */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ForgotPasswordScreen(
@@ -20,6 +27,7 @@ fun ForgotPasswordScreen(
     onNavigateBack: () -> Unit,
     onPasswordResetSent: () -> Unit
 ) {
+    // Observa el estado del formulario y el estado de restablecimiento desde el viewModel.
     val formState by viewModel.formState.collectAsState()
     val resetState by viewModel.resetState.collectAsState()
 
@@ -43,6 +51,7 @@ fun ForgotPasswordScreen(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
+            // Si el enlace se ha enviado correctamente, muestra un mensaje de éxito.
             if (resetState is ForgotPasswordState.Success) {
                 Text("A password reset link has been sent to your email.")
                 Spacer(modifier = Modifier.height(16.dp))
@@ -50,9 +59,11 @@ fun ForgotPasswordScreen(
                     Text("Back to Login")
                 }
             } else {
+                // De lo contrario, muestra el formulario para enviar el enlace de restablecimiento.
                 Text("Enter your email to receive a password reset link.", style = MaterialTheme.typography.bodyLarge)
                 Spacer(modifier = Modifier.height(32.dp))
 
+                // Campo de texto para el email.
                 OutlinedTextField(
                     value = formState.email,
                     onValueChange = { viewModel.onEmailChange(it) },
@@ -64,6 +75,7 @@ fun ForgotPasswordScreen(
                 )
                 Spacer(modifier = Modifier.height(32.dp))
 
+                // Botón para enviar el enlace de restablecimiento.
                 Button(
                     onClick = { viewModel.sendResetLink() },
                     modifier = Modifier.fillMaxWidth(),
@@ -72,6 +84,7 @@ fun ForgotPasswordScreen(
                     Text("Send Reset Link")
                 }
 
+                // Muestra un indicador de carga o un mensaje de error basado en el estado de restablecimiento.
                 when (val result = resetState) {
                     is ForgotPasswordState.Loading -> {
                         Spacer(modifier = Modifier.height(16.dp))

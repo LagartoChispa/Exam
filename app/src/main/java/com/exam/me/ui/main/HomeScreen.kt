@@ -26,6 +26,15 @@ import com.exam.me.data.local.SessionManager
 import com.exam.me.model.Movie
 import kotlinx.coroutines.launch
 
+/**
+ * La pantalla principal que muestra un catálogo de películas.
+ *
+ * @param homeViewModel El [HomeViewModel] que proporciona datos y gestiona la lógica de esta pantalla.
+ * @param onMovieClick Devolución de llamada para cuando se hace clic en una película, pasando el ID de la película.
+ * @param onLogout Devolución de llamada para gestionar el evento de cierre de sesión.
+ * @param onNavigateToProfile Devolución de llamada para navegar a la pantalla de perfil.
+ * @param onNavigateToAdminDashboard Devolución de llamada para navegar al panel de administración.
+ */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(
@@ -35,6 +44,7 @@ fun HomeScreen(
     onNavigateToProfile: () -> Unit,
     onNavigateToAdminDashboard: () -> Unit
 ) {
+    // Recopila los diversos estados del ViewModel.
     val filteredMovies by homeViewModel.filteredMovies.collectAsState()
     val searchQuery by homeViewModel.searchQuery.collectAsState()
     val movieState by homeViewModel.movieState.collectAsState()
@@ -45,25 +55,28 @@ fun HomeScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("CinePlus Catalogue") },
+                title = { Text("Catálogo CinePlus") },
                 actions = {
+                    // Muestra el botón de perfil para los roles de USUARIO y ADMIN.
                     if (userRole == "USER" || userRole == "ADMIN") {
                         IconButton(onClick = onNavigateToProfile) {
-                            Icon(Icons.Filled.Person, contentDescription = "Profile")
+                            Icon(Icons.Filled.Person, contentDescription = "Perfil")
                         }
                     }
+                    // Muestra el botón del panel de administración para los roles de ADMIN y SUPERVISOR.
                     if (userRole == "ADMIN" || userRole == "SUPERVISOR") {
                         IconButton(onClick = onNavigateToAdminDashboard) {
-                            Icon(Icons.Filled.AdminPanelSettings, contentDescription = "Admin Dashboard")
+                            Icon(Icons.Filled.AdminPanelSettings, contentDescription = "Panel de Administración")
                         }
                     }
+                    // Botón para cerrar sesión.
                     IconButton(onClick = {
                         scope.launch {
                             sessionManager.clearSession()
                             onLogout()
                         }
                     }) {
-                        Icon(Icons.AutoMirrored.Filled.Logout, contentDescription = "Logout")
+                        Icon(Icons.AutoMirrored.Filled.Logout, contentDescription = "Cerrar sesión")
                     }
                 }
             )
@@ -74,29 +87,35 @@ fun HomeScreen(
                 .fillMaxSize()
                 .padding(paddingValues)
         ) {
+            // Campo de texto para buscar películas por título o director.
             OutlinedTextField(
                 value = searchQuery,
                 onValueChange = { homeViewModel.onSearchQueryChange(it) },
-                label = { Text("Search by title or director...") },
+                label = { Text("Buscar por título o director...") },
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = 16.dp, vertical = 8.dp),
                 singleLine = true
             )
 
+            // Contenedor para el contenido principal, que cambia según el estado de la carga de la película.
             Box(modifier = Modifier.weight(1f)) {
                 when (movieState) {
                     is MovieState.Loading -> {
+                        // Muestra un indicador de carga mientras se obtienen las películas.
                         CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
                     }
                     is MovieState.Success -> {
                         if (filteredMovies.isEmpty() && searchQuery.isNotEmpty()) {
-                            Text("No results found", modifier = Modifier.align(Alignment.Center))
+                            // Muestra un mensaje si no se encuentran resultados de búsqueda.
+                            Text("No se encontraron resultados", modifier = Modifier.align(Alignment.Center))
                         } else {
+                            // Muestra la cuadrícula de películas si la carga es exitosa.
                             MovieGrid(movies = filteredMovies, onMovieClick = onMovieClick)
                         }
                     }
                     is MovieState.Error -> {
+                        // Muestra un mensaje de error si la obtención de películas falla.
                         Text(
                             text = (movieState as MovieState.Error).message,
                             modifier = Modifier.align(Alignment.Center),
@@ -109,10 +128,16 @@ fun HomeScreen(
     }
 }
 
+/**
+ * Un Composable que muestra una lista de películas en una cuadrícula vertical.
+ *
+ * @param movies La lista de [Movie] a mostrar.
+ * @param onMovieClick Devolución de llamada para cuando se hace clic en una película.
+ */
 @Composable
 fun MovieGrid(movies: List<Movie>, onMovieClick: (String) -> Unit) {
     LazyVerticalGrid(
-        columns = GridCells.Adaptive(minSize = 150.dp),
+        columns = GridCells.Adaptive(minSize = 150.dp), // Las columnas se adaptan al tamaño disponible.
         contentPadding = PaddingValues(16.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp),
         horizontalArrangement = Arrangement.spacedBy(16.dp)
@@ -123,25 +148,35 @@ fun MovieGrid(movies: List<Movie>, onMovieClick: (String) -> Unit) {
     }
 }
 
+/**
+ * Un Composable que representa un solo elemento en la cuadrícula de películas.
+ *
+ * @param movie La [Movie] a mostrar.
+ * @param onMovieClick Devolución de llamada para cuando se hace clic en el elemento.
+ * @param modifier El [Modifier] a aplicar a este Composable.
+ */
 @Composable
 fun MovieGridItem(movie: Movie, onMovieClick: (String) -> Unit, modifier: Modifier = Modifier) {
     Card(
         modifier = modifier.clickable { onMovieClick(movie.id) }
     ) {
         Column {
+            // Contenedor del póster de la película. El color de fondo es un marcador de posición.
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(200.dp)
-                    .background(Color.Green)
+                    .background(Color.Green) // TODO: Reemplazar con la imagen real de la película.
             )
             Column(modifier = Modifier.padding(12.dp)) {
+                // Muestra el título de la película.
                 Text(
                     text = movie.titulo,
                     style = MaterialTheme.typography.titleMedium,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
+                // Muestra el director de la película.
                 Text(
                     text = movie.director,
                     style = MaterialTheme.typography.bodySmall,

@@ -14,21 +14,31 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 
+/**
+ * Una pantalla Composable para el registro de usuarios.
+ *
+ * @param viewModel El [RegisterViewModel] que gestiona el estado y la lógica de esta pantalla.
+ * @param onNavigateToLogin Una función de devolución de llamada para navegar a la pantalla de inicio de sesión.
+ * @param onRegisterSuccess Una función de devolución de llamada que se invoca cuando el registro se realiza correctamente.
+ */
 @Composable
 fun RegisterScreen(
     viewModel: RegisterViewModel = viewModel(),
     onNavigateToLogin: () -> Unit,
     onRegisterSuccess: () -> Unit
 ) {
+    // Observa el estado del formulario y el resultado del registro desde el viewModel.
     val formState by viewModel.formState.collectAsState()
     val registerResult by viewModel.registerResult.collectAsState()
 
+    // Se activa cuando cambia el resultado del registro. Si el registro es exitoso, navega.
     LaunchedEffect(registerResult) {
         if (registerResult is RegisterResult.Success) {
             onRegisterSuccess()
         }
     }
 
+    // La interfaz de usuario de la pantalla de registro, dispuesta en una columna desplazable.
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -40,6 +50,7 @@ fun RegisterScreen(
         Text("Create Account", style = MaterialTheme.typography.headlineMedium)
         Spacer(modifier = Modifier.height(32.dp))
 
+        // Campo de texto para el nombre de usuario.
         OutlinedTextField(
             value = formState.nombre,
             onValueChange = { viewModel.onNameChange(it) },
@@ -51,6 +62,7 @@ fun RegisterScreen(
         )
         Spacer(modifier = Modifier.height(16.dp))
 
+        // Campo de texto para el email del usuario.
         OutlinedTextField(
             value = formState.email,
             onValueChange = { viewModel.onEmailChange(it) },
@@ -62,6 +74,7 @@ fun RegisterScreen(
         )
         Spacer(modifier = Modifier.height(16.dp))
 
+        // Campo de texto para la contraseña del usuario.
         OutlinedTextField(
             value = formState.password,
             onValueChange = { viewModel.onPasswordChange(it) },
@@ -74,6 +87,7 @@ fun RegisterScreen(
         )
         Spacer(modifier = Modifier.height(32.dp))
 
+        // Botón para activar el proceso de registro.
         Button(
             onClick = { viewModel.register() },
             modifier = Modifier.fillMaxWidth(),
@@ -84,6 +98,7 @@ fun RegisterScreen(
 
         Spacer(modifier = Modifier.height(16.dp))
 
+        // Texto en el que se puede hacer clic para navegar a la pantalla de inicio de sesión.
         Text(
             text = "Already have an account? Login",
             modifier = Modifier.clickable { onNavigateToLogin() }
@@ -91,6 +106,7 @@ fun RegisterScreen(
 
         Spacer(modifier = Modifier.height(16.dp))
 
+        // Muestra un indicador de carga o un mensaje de error basado en el resultado del registro.
         when (val result = registerResult) {
             is RegisterResult.Loading -> {
                 CircularProgressIndicator()

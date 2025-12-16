@@ -12,6 +12,14 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 
+/**
+ * Una pantalla Composable para el inicio de sesión de usuarios.
+ *
+ * @param viewModel El [LoginViewModel] que gestiona el estado y la lógica de esta pantalla.
+ * @param onNavigateToRegister Una función de devolución de llamada para navegar a la pantalla de registro.
+ * @param onNavigateToForgotPassword Una función de devolución de llamada para navegar a la pantalla de olvido de contraseña.
+ * @param onLoginSuccess Una función de devolución de llamada que se invoca cuando el inicio de sesión se realiza correctamente.
+ */
 @Composable
 fun LoginScreen(
     viewModel: LoginViewModel = viewModel(),
@@ -19,15 +27,18 @@ fun LoginScreen(
     onNavigateToForgotPassword: () -> Unit,
     onLoginSuccess: () -> Unit
 ) {
+    // Observa el estado del formulario y el resultado del inicio de sesión desde el viewModel.
     val formState by viewModel.formState.collectAsState()
     val loginResult by viewModel.loginResult.collectAsState()
 
+    // Se activa cuando cambia el resultado del inicio de sesión. Si el inicio de sesión es exitoso, navega.
     LaunchedEffect(loginResult) {
         if (loginResult is LoginResult.Success) {
             onLoginSuccess()
         }
     }
 
+    // La interfaz de usuario de la pantalla de inicio de sesión, dispuesta en una columna.
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -38,6 +49,7 @@ fun LoginScreen(
         Text("Login", style = MaterialTheme.typography.headlineMedium)
         Spacer(modifier = Modifier.height(32.dp))
 
+        // Campo de texto para el email del usuario.
         OutlinedTextField(
             value = formState.email,
             onValueChange = { viewModel.onEmailChange(it) },
@@ -49,6 +61,7 @@ fun LoginScreen(
         )
         Spacer(modifier = Modifier.height(16.dp))
 
+        // Campo de texto para la contraseña del usuario.
         OutlinedTextField(
             value = formState.password,
             onValueChange = { viewModel.onPasswordChange(it) },
@@ -61,6 +74,7 @@ fun LoginScreen(
         )
         Spacer(modifier = Modifier.height(16.dp))
 
+        // Texto en el que se puede hacer clic para navegar a la pantalla de olvido de contraseña.
         Text(
             text = "Forgot Password?",
             modifier = Modifier
@@ -70,6 +84,7 @@ fun LoginScreen(
 
         Spacer(modifier = Modifier.height(16.dp))
 
+        // Botón para activar el proceso de inicio de sesión.
         Button(
             onClick = { viewModel.login() },
             modifier = Modifier.fillMaxWidth(),
@@ -80,6 +95,7 @@ fun LoginScreen(
 
         Spacer(modifier = Modifier.height(16.dp))
 
+        // Texto en el que se puede hacer clic para navegar a la pantalla de registro.
         Text(
             text = "Don't have an account? Register",
             modifier = Modifier.clickable { onNavigateToRegister() }
@@ -87,6 +103,7 @@ fun LoginScreen(
 
         Spacer(modifier = Modifier.height(16.dp))
 
+        // Muestra un indicador de carga o un mensaje de error basado en el resultado del inicio de sesión.
         when (val result = loginResult) {
             is LoginResult.Loading -> {
                 CircularProgressIndicator()

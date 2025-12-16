@@ -4,6 +4,10 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.runtime.Composable
 
+/**
+ * Define el esquema de colores para el tema oscuro de la aplicación CinePlus.
+ * Estos colores se utilizan en toda la aplicación para mantener un aspecto coherente.
+ */
 private val CinePlusDarkColorScheme = darkColorScheme(
     primary = DarkPrimary,
     onPrimary = DarkOnPrimary,
@@ -30,13 +34,18 @@ private val CinePlusDarkColorScheme = darkColorScheme(
     outline = DarkOutline,
 )
 
+/**
+ * El tema principal de la aplicación.
+ *
+ * @param content El contenido Composable que se mostrará dentro de este tema.
+ */
 @Composable
 fun ExamTheme(
     content: @Composable () -> Unit
 ) {
     MaterialTheme(
-        colorScheme = CinePlusDarkColorScheme,
-        typography = Typography,
+        colorScheme = CinePlusDarkColorScheme, // Aplica el esquema de colores personalizado.
+        typography = Typography, // Aplica los estilos de tipografía personalizados.
         content = content
     )
 }

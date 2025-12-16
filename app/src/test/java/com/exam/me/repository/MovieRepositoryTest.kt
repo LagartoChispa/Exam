@@ -39,7 +39,12 @@ class MovieRepositoryTest {
     fun `getMovies success calls api with bearer token`() = runTest {
         // Dado un token falso y una lista de películas
         val token = "fake_token"
-        val movies = listOf(Movie(id = "1", titulo = "Title", director = "Director", anio = 2023, duracion = 120, genero = "Genre", imagen = "poster.jpg", imagenThumbnail = null))
+        val movies = listOf(
+            Movie(id = "1", titulo = "Title", director = "Director", anio = 2023, duracion = 120, genero = "Genre", imagen = "poster.jpg", imagenThumbnail = null),
+            Movie(id = "2", titulo = "Hector", director = "Director Anonimo", anio = 2024, duracion = 90, genero = "Drama", imagen = "hector.jpg", imagenThumbnail = null),
+            Movie(id = "3", titulo = "La Revuelta en Atlantis", director = "Aquaman", anio = 2021, duracion = 150, genero = "Accion", imagen = "atlantis.jpg", imagenThumbnail = null),
+            Movie(id = "4", titulo = "La pequeña vuelta a la calle", director = "Callejero", anio = 2020, duracion = 80, genero = "Comedia", imagen = "calle.jpg", imagenThumbnail = null)
+        )
         // Simula el session manager para que devuelva el token falso
         coEvery { sessionManager.authToken } returns flowOf(token)
         // Simula el servicio api para que devuelva la lista de películas cuando se le llama con el token de portador
@@ -48,8 +53,8 @@ class MovieRepositoryTest {
         // Cuando se llama a getMovies
         val result = movieRepository.getMovies()
 
-        // Entonces el resultado debe contener una película y el servicio api debe ser llamado con el token de portador correcto
-        assert(result.size == 1)
+        // Entonces el resultado debe contener cuatro películas y el servicio api debe ser llamado con el token de portador correcto
+        assert(result.size == 4)
         coVerify { apiService.getMovies("Bearer $token") }
     }
 

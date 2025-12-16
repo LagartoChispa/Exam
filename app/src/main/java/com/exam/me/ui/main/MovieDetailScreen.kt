@@ -22,17 +22,29 @@ import coil.compose.AsyncImage
 import com.exam.me.model.Movie
 import com.exam.me.util.ProximitySensor
 
+/**
+ * Muestra los detalles de una película específica.
+ *
+ * Esta pantalla también utiliza el sensor de proximidad del dispositivo. Si un objeto
+ * se acerca al dispositivo (activando el sensor), la pantalla se volverá negra.
+ *
+ * @param onNavigateBack Devolución de llamada para volver a la pantalla anterior.
+ * @param movieDetailViewModel El ViewModel que proporciona los detalles de la película.
+ */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MovieDetailScreen(
     onNavigateBack: () -> Unit,
     movieDetailViewModel: MovieDetailViewModel = viewModel()
 ) {
+    // Recopila los diversos estados del ViewModel.
     val movieDetailState by movieDetailViewModel.movieDetailState.collectAsState()
     val context = LocalContext.current
+    // Inicializa el sensor de proximidad.
     val proximitySensor = remember { ProximitySensor(context) }
     val isNear by proximitySensor.isNear.collectAsState()
 
+    // Efecto para iniciar y detener la escucha del sensor de proximidad cuando el Composable entra o sale de la composición.
     DisposableEffect(Unit) {
         proximitySensor.startListening()
         onDispose {
@@ -43,20 +55,21 @@ fun MovieDetailScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Movie Details") },
+                title = { Text("Detalles de la película") },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Atrás")
                     }
                 }
             )
         }
-    ) {
+    ) { paddingValues ->
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(it)
+                .padding(paddingValues)
         ) {
+            // Muestra el contenido en función del estado de carga de los detalles de la película.
             when (val state = movieDetailState) {
                 is MovieDetailState.Loading -> {
                     CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
@@ -72,6 +85,7 @@ fun MovieDetailScreen(
                     )
                 }
             }
+            // Muestra una superposición negra con una animación de fundido cuando el sensor de proximidad detecta un objeto cercano.
             AnimatedVisibility(
                 visible = isNear,
                 enter = fadeIn(),
@@ -87,6 +101,11 @@ fun MovieDetailScreen(
     }
 }
 
+/**
+ * Muestra el contenido principal de los detalles de la película.
+ *
+ * @param movie La [Movie] cuyos detalles se mostrarán.
+ */
 @Composable
 fun MovieDetailContent(movie: Movie) {
     Column(
@@ -94,6 +113,7 @@ fun MovieDetailContent(movie: Movie) {
             .fillMaxSize()
             .verticalScroll(rememberScrollState())
     ) {
+        // Muestra la imagen del póster de la película si está disponible.
         if (movie.posterUrl != null) {
             AsyncImage(
                 model = movie.posterUrl,
@@ -104,21 +124,23 @@ fun MovieDetailContent(movie: Movie) {
                 contentScale = ContentScale.Crop
             )
         } else {
+            // Muestra un marcador de posición si la imagen del póster no está disponible.
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(300.dp)
-                    .background(Color.Green)
+                    .background(Color.Green) // Marcador de posición
             )
         }
+        // Muestra los detalles textuales de la película.
         Column(modifier = Modifier.padding(16.dp)) {
             Text(movie.titulo, style = MaterialTheme.typography.headlineLarge)
             Spacer(modifier = Modifier.height(8.dp))
             Text("Director: ${movie.director}", style = MaterialTheme.typography.titleMedium)
             Spacer(modifier = Modifier.height(4.dp))
-            Text("Genre: ${movie.genero} | Duration: ${movie.duracion} min", style = MaterialTheme.typography.bodyMedium)
+            Text("Género: ${movie.genero} | Duración: ${movie.duracion} min", style = MaterialTheme.typography.bodyMedium)
             Spacer(modifier = Modifier.height(4.dp))
-            Text("Release Year: ${movie.anio}", style = MaterialTheme.typography.bodyMedium)
+            Text("Año de lanzamiento: ${movie.anio}", style = MaterialTheme.typography.bodyMedium)
         }
     }
 }

@@ -15,13 +15,19 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
+/**
+ * Define los posibles resultados de la operación de inicio de sesión.
+ */
 sealed class LoginResult {
-    object Idle : LoginResult()
-    object Loading : LoginResult()
-    data class Success(val authResponse: AuthResponse) : LoginResult()
-    data class Error(val message: String) : LoginResult()
+    object Idle : LoginResult() // El estado inicial antes de que comience el inicio de sesión.
+    object Loading : LoginResult() // Indica que la operación de inicio de sesión está en curso.
+    data class Success(val authResponse: AuthResponse) : LoginResult() // Indica un inicio de sesión exitoso.
+    data class Error(val message: String) : LoginResult() // Indica que se ha producido un error durante el inicio de sesión.
 }
 
+/**
+ * Representa el estado del formulario de inicio de sesión, incluyendo las entradas del usuario y los errores de validación.
+ */
 data class LoginFormState(
     val email: String = "",
     val password: String = "",
@@ -30,33 +36,47 @@ data class LoginFormState(
     val isFormValid: Boolean = false
 )
 
+/**
+ * ViewModel para la pantalla de inicio de sesión, que gestiona la lógica de negocio y el estado de la interfaz de usuario.
+ */
 class LoginViewModel(application: Application) : AndroidViewModel(application) {
 
     private val sessionManager = SessionManager(getApplication())
     private val authRepository = AuthRepository(RetrofitInstance.api, sessionManager)
 
+    // StateFlow para mantener y exponer el estado del formulario de inicio de sesión.
     private val _formState = MutableStateFlow(LoginFormState())
     val formState: StateFlow<LoginFormState> = _formState.asStateFlow()
 
+    // StateFlow para mantener y exponer el resultado de la operación de inicio de sesión.
     private val _loginResult = MutableStateFlow<LoginResult>(LoginResult.Idle)
     val loginResult: StateFlow<LoginResult> = _loginResult.asStateFlow()
 
+    /**
+     * Se llama cuando el campo del email cambia.
+     */
     fun onEmailChange(email: String) {
         _formState.update { it.copy(email = email) }
         validateForm()
     }
 
+    /**
+     * Se llama cuando el campo de la contraseña cambia.
+     */
     fun onPasswordChange(password: String) {
         _formState.update { it.copy(password = password) }
         validateForm()
     }
 
+    /**
+     * Valida los campos del formulario y actualiza el estado del formulario con cualquier error.
+     */
     private fun validateForm() {
         val email = _formState.value.email
         val password = _formState.value.password
 
-        val emailError = if (!Patterns.EMAIL_ADDRESS.matcher(email).matches()) "Invalid email" else null
-        val passwordError = if (password.isBlank()) "Password cannot be empty" else null
+        val emailError = if (!Patterns.EMAIL_ADDRESS.matcher(email).matches()) "Email inválido" else null
+        val passwordError = if (password.isBlank()) "La contraseña no puede estar vacía" else null
 
         _formState.update { it.copy(
             emailError = emailError,
@@ -65,6 +85,9 @@ class LoginViewModel(application: Application) : AndroidViewModel(application) {
         ) }
     }
 
+    /**
+     * Inicia el proceso de inicio de sesión.
+     */
     fun login() {
         validateForm()
         if (!_formState.value.isFormValid) return
@@ -76,12 +99,15 @@ class LoginViewModel(application: Application) : AndroidViewModel(application) {
                     email = _formState.value.email,
                     password = _formState.value.password
                 )
-                // The login response now contains the user and token, so no extra call is needed.
                 val authResponse = authRepository.login(request)
-                sessionManager.saveSession(authResponse.accessToken, authResponse.user.role)
-                _loginResult.value = LoginResult.Success(authResponse)
+                if (authResponse.user != null) {
+                    sessionManager.saveSession(authResponse.accessToken, authResponse.user.role)
+                    _loginResult.value = LoginResult.Success(authResponse)
+                } else {
+                    _loginResult.value = LoginResult.Error("Error de inicio de sesión: no se devolvieron los datos del usuario")
+                }
             } catch (e: Exception) {
-                _loginResult.value = LoginResult.Error(e.message ?: "An unexpected error occurred")
+                _loginResult.value = LoginResult.Error(e.message ?: "Ocurrió un error inesperado")
             }
         }
     }

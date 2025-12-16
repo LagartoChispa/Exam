@@ -6,8 +6,12 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
 
-// Set of Material typography styles to start with
+/**
+ * Define el conjunto de estilos de tipografía de Material Design para la aplicación.
+ * Esto te permite personalizar la apariencia del texto en toda tu aplicación.
+ */
 val Typography = Typography(
+    // Estilo de texto predeterminado para cuerpos de texto largos.
     bodyLarge = TextStyle(
         fontFamily = FontFamily.Default,
         fontWeight = FontWeight.Normal,
@@ -15,7 +19,7 @@ val Typography = Typography(
         lineHeight = 24.sp,
         letterSpacing = 0.5.sp
     )
-    /* Other default text styles to override
+    /* Otros estilos de texto predeterminados que puedes anular para personalizar aún más tu tema.
     titleLarge = TextStyle(
         fontFamily = FontFamily.Default,
         fontWeight = FontWeight.Normal,

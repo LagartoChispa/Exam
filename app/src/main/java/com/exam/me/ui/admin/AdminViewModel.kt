@@ -10,27 +10,46 @@ import com.exam.me.repository.UserRepository
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 
+/**
+ * Define los posibles estados para las operaciones de administrador.
+ */
 sealed class AdminState {
+    /** Indica que los datos se están cargando actualmente. */
     object Loading : AdminState()
+    /** Indica que los datos se han cargado correctamente. */
     data class Success(val users: List<User>) : AdminState()
+    /** Indica que se ha producido un error al cargar los datos. */
     data class Error(val message: String) : AdminState()
 }
 
+/**
+ * ViewModel para el panel de administración, responsable de obtener y gestionar los datos del usuario.
+ */
 class AdminViewModel(application: Application) : AndroidViewModel(application) {
 
     private val userRepository = UserRepository(RetrofitInstance.api, SessionManager(getApplication()))
     private val sessionManager = SessionManager(getApplication())
 
+    // StateFlow para mantener y exponer el estado actual de las operaciones de administrador.
     private val _adminState = MutableStateFlow<AdminState>(AdminState.Loading)
     val adminState: StateFlow<AdminState> = _adminState
 
+    /**
+     * Expone el rol del usuario actual desde el [SessionManager].
+     */
     val userRole: StateFlow<String?> = sessionManager.userRole
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
 
+    /**
+     * Inicializa el ViewModel obteniendo todos los usuarios.
+     */
     init {
         fetchAllUsers()
     }
 
+    /**
+     * Obtiene todos los usuarios del repositorio y actualiza el [adminState].
+     */
     fun fetchAllUsers() {
         viewModelScope.launch {
             _adminState.value = AdminState.Loading
