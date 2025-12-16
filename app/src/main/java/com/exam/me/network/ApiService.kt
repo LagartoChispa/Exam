@@ -1,9 +1,10 @@
 package com.exam.me.network
 
 import com.exam.me.model.*
+import okhttp3.MultipartBody
+import retrofit2.Response
 import retrofit2.http.*
 
-// This interface is now aligned with the backend documentation provided.
 interface ApiService {
 
     // --- Auth Endpoints --- //
@@ -13,6 +14,9 @@ interface ApiService {
 
     @POST("auth/login")
     suspend fun login(@Body request: LoginRequest): AuthResponse
+
+    @POST("auth/forgot-password")
+    suspend fun forgotPassword(@Body request: ForgotPasswordRequest): Response<Unit>
 
     @GET("auth/profile")
     suspend fun getAuthUser(@Header("Authorization") token: String): User
@@ -25,6 +29,20 @@ interface ApiService {
     @PUT("usuario-profile/me")
     suspend fun updateMyProfile(@Header("Authorization") token: String, @Body profile: UserProfile): UserProfile
 
+    @Multipart
+    @POST("usuario-profile/me/avatar")
+    suspend fun uploadProfileAvatar(
+        @Header("Authorization") token: String,
+        @Part image: MultipartBody.Part
+    ): UserProfile
+
+    // --- Admin Endpoints --- //
+    @GET("usuario")
+    suspend fun getAllUsers(@Header("Authorization") token: String): List<User>
+
+    @POST("pelicula")
+    suspend fun createMovie(@Header("Authorization") token: String, @Body movie: Movie): Movie
+
     // --- Movie (Pelicula) Endpoints --- //
 
     @GET("pelicula")
@@ -36,6 +54,4 @@ interface ApiService {
         @Path("id") movieId: String
     ): Movie
 
-    // Note: Creating a movie and uploading an image are separate steps.
-    // The app will focus on displaying movies for now.
 }

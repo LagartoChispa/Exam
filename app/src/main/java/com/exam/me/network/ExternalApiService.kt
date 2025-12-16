@@ -4,34 +4,37 @@ import com.google.gson.annotations.SerializedName
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 import retrofit2.http.GET
+import retrofit2.http.Query
 
-// Data models for the external API
-data class Country(
-    val name: CountryName,
-    val capital: List<String>?,
-    val population: Long,
-    val flags: Flag
+// TMDb API Key - Replace with your actual key
+private const val TMDB_API_KEY = "YOUR_TMDB_API_KEY"
+
+// --- TMDb Data Models ---
+
+data class TmdbMovieSearchResult(
+    val results: List<TmdbMovie>
 )
 
-data class CountryName(
-    val common: String,
-    val official: String
+data class TmdbMovie(
+    val id: Int,
+    @SerializedName("poster_path")
+    val posterPath: String?
 )
 
-data class Flag(
-    val png: String,
-    val svg: String
-)
+// --- TMDb API Service ---
 
-// Interface for the external API service
 interface ExternalApiService {
-    @GET("all")
-    suspend fun getAllCountries(): List<Country>
+    @GET("search/movie")
+    suspend fun searchMovie(
+        @Query("api_key") apiKey: String = TMDB_API_KEY,
+        @Query("query") movieTitle: String
+    ): TmdbMovieSearchResult
 }
 
-// Retrofit instance for the external API
+// --- Retrofit Instance for TMDb ---
+
 object ExternalApiInstance {
-    private const val BASE_URL = "https://restcountries.com/v3.1/"
+    private const val BASE_URL = "https://api.themoviedb.org/3/"
 
     val api: ExternalApiService by lazy {
         Retrofit.Builder()

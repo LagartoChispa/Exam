@@ -16,6 +16,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 fun LoginScreen(
     viewModel: LoginViewModel = viewModel(),
     onNavigateToRegister: () -> Unit,
+    onNavigateToForgotPassword: () -> Unit,
     onLoginSuccess: () -> Unit
 ) {
     val formState by viewModel.formState.collectAsState()
@@ -58,7 +59,16 @@ fun LoginScreen(
             trailingIcon = { if (formState.passwordError != null) Icon(Icons.Filled.Error, "error", tint = MaterialTheme.colorScheme.error) },
             supportingText = { if (formState.passwordError != null) Text(text = formState.passwordError!!, color = MaterialTheme.colorScheme.error) }
         )
-        Spacer(modifier = Modifier.height(32.dp))
+        Spacer(modifier = Modifier.height(16.dp))
+
+        Text(
+            text = "Forgot Password?",
+            modifier = Modifier
+                .clickable { onNavigateToForgotPassword() }
+                .align(Alignment.End)
+        )
+
+        Spacer(modifier = Modifier.height(16.dp))
 
         Button(
             onClick = { viewModel.login() },

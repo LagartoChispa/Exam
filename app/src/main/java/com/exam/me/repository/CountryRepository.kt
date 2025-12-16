@@ -1,7 +1,6 @@
 package com.exam.me.repository
 
-import com.exam.me.network.ExternalApiInstance
-
+// This repository is no longer in use and has been cleared to resolve build errors.
 class CountryRepository {
-    suspend fun getAllCountries() = ExternalApiInstance.api.getAllCountries()
+    // The previous implementation was tied to an external API that is no longer being used.
 }

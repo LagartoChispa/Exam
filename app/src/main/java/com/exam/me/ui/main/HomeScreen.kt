@@ -8,6 +8,8 @@ import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Logout
+import androidx.compose.material.icons.filled.AdminPanelSettings
+import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -29,11 +31,14 @@ import kotlinx.coroutines.launch
 fun HomeScreen(
     homeViewModel: HomeViewModel = viewModel(),
     onMovieClick: (String) -> Unit,
-    onLogout: () -> Unit
+    onLogout: () -> Unit,
+    onNavigateToProfile: () -> Unit,
+    onNavigateToAdminDashboard: () -> Unit
 ) {
     val filteredMovies by homeViewModel.filteredMovies.collectAsState()
     val searchQuery by homeViewModel.searchQuery.collectAsState()
     val movieState by homeViewModel.movieState.collectAsState()
+    val userRole by homeViewModel.userRole.collectAsState()
     val sessionManager = SessionManager(LocalContext.current)
     val scope = rememberCoroutineScope()
 
@@ -42,6 +47,16 @@ fun HomeScreen(
             TopAppBar(
                 title = { Text("CinePlus Catalogue") },
                 actions = {
+                    if (userRole == "USER" || userRole == "ADMIN") {
+                        IconButton(onClick = onNavigateToProfile) {
+                            Icon(Icons.Filled.Person, contentDescription = "Profile")
+                        }
+                    }
+                    if (userRole == "ADMIN" || userRole == "SUPERVISOR") {
+                        IconButton(onClick = onNavigateToAdminDashboard) {
+                            Icon(Icons.Filled.AdminPanelSettings, contentDescription = "Admin Dashboard")
+                        }
+                    }
                     IconButton(onClick = {
                         scope.launch {
                             sessionManager.clearSession()
@@ -102,16 +117,16 @@ fun MovieGrid(movies: List<Movie>, onMovieClick: (String) -> Unit) {
         verticalArrangement = Arrangement.spacedBy(16.dp),
         horizontalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-        items(movies) { movie ->
+        items(movies, key = { it.id }) { movie ->
             MovieGridItem(movie = movie, onMovieClick = onMovieClick)
         }
     }
 }
 
 @Composable
-fun MovieGridItem(movie: Movie, onMovieClick: (String) -> Unit) {
+fun MovieGridItem(movie: Movie, onMovieClick: (String) -> Unit, modifier: Modifier = Modifier) {
     Card(
-        modifier = Modifier.clickable { onMovieClick(movie.id) }
+        modifier = modifier.clickable { onMovieClick(movie.id) }
     ) {
         Column {
             Box(

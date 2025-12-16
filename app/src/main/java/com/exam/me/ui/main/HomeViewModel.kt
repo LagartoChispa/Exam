@@ -22,10 +22,13 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
     private val sessionManager = SessionManager(getApplication())
 
     private val _movieState = MutableStateFlow<MovieState>(MovieState.Loading)
-    val movieState: StateFlow<MovieState> = _movieState.asStateFlow() // Exposing the state publicly
+    val movieState: StateFlow<MovieState> = _movieState.asStateFlow()
 
     private val _searchQuery = MutableStateFlow("")
     val searchQuery: StateFlow<String> = _searchQuery.asStateFlow()
+
+    val userRole: StateFlow<String?> = sessionManager.userRole
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
 
     val filteredMovies: StateFlow<List<Movie>> = combine(
         _movieState, 

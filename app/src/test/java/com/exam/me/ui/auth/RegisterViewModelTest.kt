@@ -1,50 +1,62 @@
 package com.exam.me.ui.auth
 
 import android.app.Application
+import androidx.arch.core.executor.testing.InstantTaskExecutorRule
 import com.exam.me.data.local.SessionManager
 import com.exam.me.model.AuthResponse
+import com.exam.me.model.RegisterRequest
+import com.exam.me.model.User
 import com.exam.me.repository.AuthRepository
 import io.mockk.coEvery
 import io.mockk.coVerify
-import io.mockk.mockk
+import io.mockk.impl.annotations.MockK
+import io.mockk.junit4.MockKRule
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.test.StandardTestDispatcher
+import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
 import org.junit.After
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNotNull
 import org.junit.Before
+import org.junit.Rule
 import org.junit.Test
 
 @ExperimentalCoroutinesApi
 class RegisterViewModelTest {
 
-    private val testDispatcher = StandardTestDispatcher()
-    private lateinit var viewModel: RegisterViewModel
-    private lateinit var authRepository: AuthRepository
-    private lateinit var sessionManager: SessionManager
+    @get:Rule
+    val mockkRule = MockKRule(this)
+
+    @get:Rule
+    val instantTaskExecutorRule = InstantTaskExecutorRule()
+
+    @MockK
     private lateinit var application: Application
+
+    @MockK
+    private lateinit var sessionManager: SessionManager
+
+    @MockK
+    private lateinit var authRepository: AuthRepository
+
+    private lateinit var registerViewModel: RegisterViewModel
+
+    private val testDispatcher = UnconfinedTestDispatcher()
 
     @Before
     fun setUp() {
         Dispatchers.setMain(testDispatcher)
-        application = mockk(relaxed = true)
-        authRepository = mockk()
-        sessionManager = mockk(relaxed = true)
-        // This is a workaround to inject mocks into the ViewModel
-        viewModel = object : RegisterViewModel(application) {
-            init {
-                this.javaClass.getDeclaredField("authRepository").apply {
-                    isAccessible = true
-                    set(this@object, authRepository)
-                }
-                this.javaClass.getDeclaredField("sessionManager").apply {
-                    isAccessible = true
-                    set(this@object, sessionManager)
-                }
-            }
-        }
+        registerViewModel = RegisterViewModel(application)
+        val repositoryField = registerViewModel::class.java.getDeclaredField("authRepository")
+        repositoryField.isAccessible = true
+        repositoryField.set(registerViewModel, authRepository)
+
+        val sessionManagerField = registerViewModel::class.java.getDeclaredField("sessionManager")
+        sessionManagerField.isAccessible = true
+        sessionManagerField.set(registerViewModel, sessionManager)
     }
 
     @After
@@ -53,40 +65,58 @@ class RegisterViewModelTest {
     }
 
     @Test
-    fun `register success updates state and saves token`() = runTest {
-        val email = "test@example.com"
-        val password = "password"
+    fun `register with valid data updates state to success`() = runTest {
         val name = "Test User"
-        val response = AuthResponse("token")
-        coEvery { authRepository.register(any()) } returns response
+        val email = "test@test.com"
+        val password = "password"
+        val user = User("1", email, "USER", name, null)
+        val authResponse = AuthResponse(user, "token")
+        val registerRequest = RegisterRequest(name, email, password)
 
-        viewModel.onEmailChange(email)
-        viewModel.onPasswordChange(password)
-        viewModel.onNameChange(name)
-        viewModel.register()
+        coEvery { authRepository.register(registerRequest) } returns authResponse
+        coEvery { sessionManager.saveSession(any(), any()) } returns Unit
 
-        assert(viewModel.registerResult.value is RegisterResult.Loading)
-        testDispatcher.scheduler.advanceUntilIdle()
-        assert(viewModel.registerResult.value is RegisterResult.Success)
-        coVerify { sessionManager.saveAuthToken("token") }
+        registerViewModel.onNameChange(name)
+        registerViewModel.onEmailChange(email)
+        registerViewModel.onPasswordChange(password)
+        registerViewModel.register()
+
+        val result = registerViewModel.registerResult.value
+        assert(result is RegisterResult.Success)
+        assertEquals(authResponse, (result as RegisterResult.Success).authResponse)
+        coVerify { sessionManager.saveSession("token", "USER") }
     }
 
     @Test
-    fun `register failure updates state`() = runTest {
-        val email = "test@example.com"
-        val password = "password"
+    fun `register with invalid data updates state to error`() = runTest {
         val name = "Test User"
-        val exception = RuntimeException("Registration failed")
-        coEvery { authRepository.register(any()) } throws exception
+        val email = "test@test.com"
+        val password = "password"
+        val registerRequest = RegisterRequest(name, email, password)
+        val errorMessage = "Email already exists"
 
-        viewModel.onEmailChange(email)
-        viewModel.onPasswordChange(password)
-        viewModel.onNameChange(name)
-        viewModel.register()
+        coEvery { authRepository.register(registerRequest) } throws Exception(errorMessage)
 
-        assert(viewModel.registerResult.value is RegisterResult.Loading)
-        testDispatcher.scheduler.advanceUntilIdle()
-        val errorState = viewModel.registerResult.value as RegisterResult.Error
-        assert(errorState.message == "Registration failed")
+        registerViewModel.onNameChange(name)
+        registerViewModel.onEmailChange(email)
+        registerViewModel.onPasswordChange(password)
+        registerViewModel.register()
+
+        val result = registerViewModel.registerResult.value
+        assert(result is RegisterResult.Error)
+        assertEquals(errorMessage, (result as RegisterResult.Error).message)
+    }
+
+    @Test
+    fun `register with invalid form does not call repository`() = runTest {
+        registerViewModel.onNameChange("")
+        registerViewModel.onEmailChange("invalid-email")
+        registerViewModel.onPasswordChange("short")
+        registerViewModel.register()
+
+        coVerify(exactly = 0) { authRepository.register(any()) }
+        assertNotNull(registerViewModel.formState.value.nombreError)
+        assertNotNull(registerViewModel.formState.value.emailError)
+        assertNotNull(registerViewModel.formState.value.passwordError)
     }
 }

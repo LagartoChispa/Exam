@@ -9,16 +9,23 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import com.exam.me.ui.admin.AdminDashboardScreen
+import com.exam.me.ui.admin.AddMovieScreen
+import com.exam.me.ui.auth.ForgotPasswordScreen
 import com.exam.me.ui.auth.LoginScreen
-import com.exam.me.ui.auth.RegistroSc
+import com.exam.me.ui.auth.RegisterScreen
 import com.exam.me.ui.main.HomeScreen
 import com.exam.me.ui.main.MovieDetailScreen
+import com.exam.me.ui.main.ProfileScreen
 
-// Simplified navigation graph based on the core requirements
 sealed class Screen(val route: String) {
     object Login : Screen("login")
     object Register : Screen("register")
+    object ForgotPassword : Screen("forgot_password")
     object Home : Screen("home")
+    object Profile : Screen("profile")
+    object AdminDashboard : Screen("admin_dashboard")
+    object AddMovie : Screen("add_movie")
     object MovieDetail : Screen("movie_detail/{movieId}") {
         fun createRoute(movieId: String) = "movie_detail/$movieId"
     }
@@ -36,6 +43,7 @@ fun AppNavigation(startDestination: String) {
         composable(Screen.Login.route) {
             LoginScreen(
                 onNavigateToRegister = { navController.navigate(Screen.Register.route) },
+                onNavigateToForgotPassword = { navController.navigate(Screen.ForgotPassword.route) },
                 onLoginSuccess = {
                     navController.navigate(Screen.Home.route) {
                         popUpTo(Screen.Login.route) { inclusive = true }
@@ -44,13 +52,19 @@ fun AppNavigation(startDestination: String) {
             )
         }
         composable(Screen.Register.route) {
-            RegistroSc(
+            RegisterScreen(
                 onNavigateToLogin = { navController.navigate(Screen.Login.route) },
                 onRegisterSuccess = {
                     navController.navigate(Screen.Home.route) {
                         popUpTo(Screen.Register.route) { inclusive = true }
                     }
                 }
+            )
+        }
+        composable(Screen.ForgotPassword.route) {
+            ForgotPasswordScreen(
+                onNavigateBack = { navController.popBackStack() },
+                onPasswordResetSent = { navController.popBackStack() }
             )
         }
         composable(Screen.Home.route) {
@@ -62,8 +76,22 @@ fun AppNavigation(startDestination: String) {
                     navController.navigate(Screen.Login.route) {
                         popUpTo(Screen.Home.route) { inclusive = true }
                     }
-                }
+                },
+                onNavigateToProfile = { navController.navigate(Screen.Profile.route) },
+                onNavigateToAdminDashboard = { navController.navigate(Screen.AdminDashboard.route) }
             )
+        }
+        composable(Screen.Profile.route) {
+            ProfileScreen(onNavigateBack = { navController.popBackStack() })
+        }
+        composable(Screen.AdminDashboard.route) {
+            AdminDashboardScreen(
+                onNavigateBack = { navController.popBackStack() },
+                onNavigateToAddMovie = { navController.navigate(Screen.AddMovie.route) }
+            )
+        }
+        composable(Screen.AddMovie.route) {
+            AddMovieScreen(onNavigateBack = { navController.popBackStack() })
         }
         composable(
             route = Screen.MovieDetail.route,
